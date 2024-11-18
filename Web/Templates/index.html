@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermostat</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gauge-display {
+            font-size: 40px; 
+            font-weight: bold;
+            color: #333; 
+            text-align: left; 
+            margin-top: -50px; 
+            margin-left: 70px; 
+        }
+
+        
+        .chart-container {
+            display: flex; 
+            justify-content: center; 
+            gap: 50px; 
+            margin-bottom: 50px; 
+        }
+
+        
+        .chart-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Thermostat App</h1>
+
+    
+    <div class="chart-container">
+        
+        <div class="container">
+            <div class="chart-title">Temperature</div>
+            <div style="width: 250px; height: 250px;">
+                <canvas id="temperatureGauge" width="250" height="250"></canvas>
+            </div>
+            
+            <div class="gauge-display">
+                {{ temperature }} °C
+            </div>
+        </div>
+
+        
+        <div class="container">
+            <div class="chart-title">Humidity</div>
+            <div style="width: 250px; height: 250px;">
+                <canvas id="humidityGauge" width="250" height="250"></canvas>
+            </div>
+            
+            <div class="gauge-display">
+                {{ humidity }} %
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctxTemp = document.getElementById('temperatureGauge').getContext('2d');
+        const temperature = parseInt("{{ temperature }}", 10);
+
+        const tempChart = new Chart(ctxTemp, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [temperature, 100 - temperature],
+                    backgroundColor: ['#3498db', '#ecf0f1'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: false, 
+                maintainAspectRatio: false, 
+                cutout: '85%',
+                rotation: -125,
+                circumference: 250,
+                plugins: {
+                    tooltip: { enabled: false },
+                },
+                legend: {
+                    display: false,
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
+            }
+        });
+
+        // Humidity Chart
+        const ctxHum = document.getElementById('humidityGauge').getContext('2d');
+        const humidity = parseInt("{{ humidity }}", 10);
+
+        const humidityChart = new Chart(ctxHum, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [humidity, 100 - humidity],
+                    backgroundColor: ['#1abc9c', '#ecf0f1'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: false, 
+                maintainAspectRatio: false, 
+                cutout: '85%',
+                rotation: -125,
+                circumference: 250,
+                plugins: {
+                    tooltip: { enabled: false },
+                },
+                legend: {
+                    display: false, 
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
+            }
+        });
+    </script>
+</body>
+</html>
