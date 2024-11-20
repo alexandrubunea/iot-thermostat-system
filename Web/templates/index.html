@@ -1,264 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Thermostat App</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Function to format time from minutes to hh:mm:ss
-        function formatTime(minutes) {
-            const totalSeconds = minutes * 60;
-            const hrs = Math.floor(totalSeconds / 3600);
-            const mins = Math.floor((totalSeconds % 3600) / 60);
-            const secs = totalSeconds % 60;
-            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thermostat Remote Controller</title>
 
-        let tempChart, humidityChart; // Variables for the Chart.js instances
-
-        function initializeCharts() {
-            // Initialize Temperature Chart
-            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
-            tempChart = new Chart(tempCtx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [0, 100], // Placeholder data
-                        backgroundColor: ['#3498db', '#ecf0f1'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    cutout: '85%',
-                    rotation: -125,
-                    circumference: 250,
-                    plugins: { tooltip: { enabled: false } },
-                    legend: { display: false }
-                }
-            });
-
-            // Initialize Humidity Chart
-            const humCtx = document.getElementById('humidityChart').getContext('2d');
-            humidityChart = new Chart(humCtx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [0, 100], // Placeholder data
-                        backgroundColor: ['#1abc9c', '#ecf0f1'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    cutout: '85%',
-                    rotation: -125,
-                    circumference: 250,
-                    plugins: { tooltip: { enabled: false } },
-                    legend: { display: false }
-                }
-            });
-        }
-
-        function updateData() {
-            fetch('/data')
-                .then(response => response.json())
-                .then(data => {
-                    // Update DOM elements
-                    document.getElementById('temperatureDisplay').textContent = `${data.temperature} °C`;
-                    document.getElementById('humidityDisplay').textContent = `${data.humidity} %`;
-                    document.getElementById('runningTimeDisplay').textContent = formatTime(data.running_time);
-
-                    // Update Temperature Chart
-                    tempChart.data.datasets[0].data = [data.temperature, 100 - data.temperature];
-                    tempChart.update();
-
-                    // Update Humidity Chart
-                    humidityChart.data.datasets[0].data = [data.humidity, 100 - data.humidity];
-                    humidityChart.update();
-                    console.log(data);
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
-
-        // Set up periodic updates every 5 seconds
-        setInterval(updateData, 1000);
-
-        // Initial data load and chart initialization
-        window.onload = () => {
-            initializeCharts();
-            updateData();
-        };
-    </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-
-        h1 {
-            margin: 20px 0;
-            color: #333;
-        }
-
-        .data-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-        }
-
-        .data-box {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            width: 30%;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .data-title {
-            font-size: 24px;
-            color: #555;
-            margin-bottom: 10px;
-        }
-
-        .data-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #222;
-        }
-
-        .chart-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px auto;
-            width: 80%;
-        }
-
-        .chart-box {
-            width: 250px;
-            height: 250px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>Thermostat Dashboard</h1>
+    <div class="container mb-5">
+        <h1 class="fw-bold text-uppercase">Thermostat Dashboard</h1>
+        <hr class="bg-dark">
 
-    <!-- Chart Section -->
-    <div class="chart-container">
-        <div>
-            <canvas id="temperatureChart" class="chart-box"></canvas>
-            <div class="data-title">Temperature</div>
-            <div class="data-value" id="temperatureDisplay">-- °C</div>
+        <div class="d-block d-lg-flex justify-content-between">
+            <div class="m-5 text-center w-auto">
+                <div class="row">
+                    <canvas id="temperatureChart" class="chart-box"></canvas>
+                </div>
+                <div class="row">
+                    <h1 class="fw-bold text-uppercase" id="temperatureDisplay">-- °C</h1>
+                </div>
+                <div class="row">
+                    <div class="fw-bold text-uppercase h6">Temperature</div>
+                </div>
+            </div>
+            <div class="m-5">
+                <div class="timer text-center">
+                    <div class="fw-bold text-uppercase h6">THERMOSTAT WILL RUN</div>
+                    <div class="h3 fw-bold" id="runningTimeDisplay">--:--</div>
+                    <hr class="bg-light">
+                    <div class="fw-bold text-uppercase h6">TARGET TEMPERATURE</div>
+                    <div class="h3 fw-bold" id="targetTemperature">-- °C</div>
+                </div>
+            </div>
+            <div class="m-5 text-center w-auto">
+                <div class="row">
+                    <canvas id="humidityChart" class="chart-box"></canvas>
+                </div>
+                <div class="row">
+                    <h1 class="fw-bold text-uppercase" id="humidityDisplay">-- %</h1>
+                </div>
+                <div class="row">
+                    <div class="fw-bold text-uppercase h6">Humidity</div>
+                </div>
+            </div>
         </div>
-        <div>
-            <canvas id="humidityChart" class="chart-box"></canvas>
-            <div class="data-title">Humidity</div>
-            <div class="data-value" id="humidityDisplay">-- %</div>
+        <hr class="bg-light">
+        <div class="d-block d-lg-flex justify-content-center">
+            <div class="col">
+                <div class="row px-5">
+                    <button class="btn btn-lg btn-primary text-uppercase fw-bolder p-4"
+                        onclick="sendButtonUpdate('increase-target-temp')">increase target temperature</button>
+                </div>
+                <div class="row px-5">
+                    <button class="btn btn-lg btn-primary text-uppercase fw-bolder p-4 mt-3"
+                        onclick="sendButtonUpdate('decrease-target-temp')">decrease target temperature</button>
+                </div>
+            </div>
+            <div class="col mt-5 mt-lg-0">
+                <div class="row px-5">
+                    <button class="btn btn-lg btn-primary text-uppercase fw-bolder p-4"
+                        onclick="sendButtonUpdate('increase-running-time')">increase running time</button>
+                </div>
+                <div class="row px-5">
+                    <button class="btn btn-lg btn-primary text-uppercase fw-bolder p-4 mt-3"
+                        onclick="sendButtonUpdate('decrease-running-time')">decrease running time</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Running Time Section -->
-    <div class="data-container">
-        <div class="data-box">
-            <div class="data-title">Running Time</div>
-            <div class="data-value" id="runningTimeDisplay">--:--:--</div>
-        </div>
-    </div>
-</body>
-</html>
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thermostat App</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Function to send button press updates to Flask
-        function sendButtonUpdate(action) {
-            fetch('/button-press', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ action: action }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Button action received by server:', data);
-            })
-            .catch(error => {
-                console.error('Error sending button action:', error);
-            });
-        }
-    </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            text-align: center;
-        }
-
-        h1 {
-            color: #333;
-            margin: 20px 0;
-        }
-
-        .button-container {
-            margin-top: 30px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            justify-content: center;
-            align-items: center;
-            width: 80%;
-            margin: 30px auto;
-        }
-
-        .button {
-            padding: 20px 50px;
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            background-color: #3498db;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            text-align: center;
-        }
-
-        .button:hover {
-            background-color: #2980b9;
-        }
-    </style>
-</head>
-<body>
-    <h1>Thermostat Actions</h1>
-
-    <!-- Existing Elements -->
-    <div id="chart-section">
-        <!-- Your temperature and humidity graphs and displays will go here -->
-    </div>
-
-    <!-- New Button Section -->
-    <div class="button-container">
-        <button class="button" onclick="sendButtonUpdate('increase-target-temp')">Target Temperature Up</button>
-        <button class="button" onclick="sendButtonUpdate('decrease-target-temp')">Target Temperature Down</button>
-        <button class="button" onclick="sendButtonUpdate('increase-running-time')">Running Time Up</button>
-        <button class="button" onclick="sendButtonUpdate('decrease-running-time')">Running Time Down</button>
-    </div>
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

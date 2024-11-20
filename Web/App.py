@@ -6,7 +6,11 @@ from threading import Lock
 
 ESP32_IP_ADDRESS = 'http://192.168.1.140/api/'
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder='templates',
+    static_folder='static'
+)
 
 current_data = {
     'currentTemperature': None,
@@ -63,7 +67,7 @@ def handle_button_press():
 def esp32_thread():
     while True:
         fetch_esp32_data()
-        time.sleep(1)  # Fetch every second
+        time.sleep(0.25)  # Fetch every 250ms
 
 if __name__ == '__main__':
     # Start a background thread to fetch ESP32 data periodically
