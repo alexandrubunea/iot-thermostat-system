@@ -11,6 +11,8 @@
 
     This script is tested only with the Raspberry Pi OS. I don't know how compatible is with any
     other Debian distribution.
+
+    Usage: sudo python setup.py
 """
 
 import os, subprocess
@@ -25,33 +27,31 @@ REQUIRED_PACKAGES = [
 ]
 
 HOTSPOT_CONFIG = """
-    interface=wlan0
+    interface=wlan0_ap
     driver=nl80211
     ssid=Pi-Hotspot
     hw_mode=g
     channel=6
     auth_algs=1
     wpa=2
-    wpa_passphrase=admin
-    wpa_key_mgmt=WPA2-PSK
+    wpa_passphrase=admin2raspi
+    wpa_key_mgmt=WPA-PSK
     rsn_pairwise=CCMP
 """
 
 DNSMASQ_CONFIG = """
-    interface=wlan0
+    interface=wlan0_ap
     dhcp-range=192.168.50.10,192.168.50.50,12h
 """
 
 DHCPCD_CONFIG = """
-   interface wlan0
+    interface wlan0_ap
     static ip_address=192.168.50.1/24 
 """
 
 LOG_FILE = 'log.txt'
 
 def check_for_dependencies():
-    os.system('sudo true') # Auth as sudo
-
     with open(LOG_FILE, 'a') as log: # Log for any errors
         result = subprocess.run('sudo apt update && sudo apt upgrade -y',
                                 capture_output=True, text=True, shell=True)
@@ -62,7 +62,7 @@ def check_for_dependencies():
 
         for package in REQUIRED_PACKAGES:
             result = subprocess.run(f'sudo apt install -y {package}',
-                                    capture_output=True, text=True)
+                                    capture_output=True, text=True, shell=True)
 
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             log.write(f'[{timestamp}] {result.stdout}')
@@ -81,14 +81,26 @@ def configure_network():
         dhcp_conf.write(DHCPCD_CONFIG)
 
     with open(LOG_FILE, 'a') as log:
+        result = subprocess.run('sudo iw dev wlan0 interface add wlan0_ap type __ap',
+                                capture_output=True, text=True, shell=True)
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log.write(f'[{timestamp}] {result.stdout}')
+        log.write(f'[{timestamp}] {result.stderr}')
+
+        result = subprocess.run('sudo systemctl unmask hostapd',
+                                capture_output=True, text=True, shell=True)
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log.write(f'[{timestamp}] {result.stdout}')
+        log.write(f'[{timestamp}] {result.stderr}')
+
         result = subprocess.run('sudo systemctl enable hostapd',
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, shell=True)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         log.write(f'[{timestamp}] {result.stdout}')
         log.write(f'[{timestamp}] {result.stderr}')
 
         result = subprocess.run('sudo systemctl start dnsmasq',
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, shell=True)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         log.write(f'[{timestamp}] {result.stdout}')
         log.write(f'[{timestamp}] {result.stderr}')
@@ -99,3 +111,5 @@ def search_for_esp32():
 if __name__ == '__main__':
     check_for_dependencies()
     configure_network()
+
+    os.system('sudo reboot')
