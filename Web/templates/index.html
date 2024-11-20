@@ -79,6 +79,7 @@
                     // Update Humidity Chart
                     humidityChart.data.datasets[0].data = [data.humidity, 100 - data.humidity];
                     humidityChart.update();
+                    console.log(data);
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
@@ -254,10 +255,10 @@
 
     <!-- New Button Section -->
     <div class="button-container">
-        <button class="button" onclick="sendButtonUpdate('target_temp_up')">Target Temperature Up</button>
-        <button class="button" onclick="sendButtonUpdate('target_temp_down')">Target Temperature Down</button>
-        <button class="button" onclick="sendButtonUpdate('running_time_up')">Running Time Up</button>
-        <button class="button" onclick="sendButtonUpdate('running_time_down')">Running Time Down</button>
+        <button class="button" onclick="sendButtonUpdate('increase-target-temp')">Target Temperature Up</button>
+        <button class="button" onclick="sendButtonUpdate('decrease-target-temp')">Target Temperature Down</button>
+        <button class="button" onclick="sendButtonUpdate('increase-running-time')">Running Time Up</button>
+        <button class="button" onclick="sendButtonUpdate('decrease-running-time')">Running Time Down</button>
     </div>
 </body>
 </html>
