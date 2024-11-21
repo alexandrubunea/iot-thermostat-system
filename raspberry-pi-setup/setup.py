@@ -50,7 +50,10 @@ dhcp-range=192.168.50.10,192.168.50.50,12h
 
 DHCPCD_CONFIG = """
 interface wlan0_ap
-static ip_address=192.168.50.1/24 
+static ip_address=192.168.50.1/24
+nohook wpa_supplicant
+nohook eth0
+nohook wlan0_ap
 """
 
 NETWORK_INTERFACE = """
@@ -87,12 +90,16 @@ def write_to_file(file, content):
         f.write(content)
 
 def check_for_dependencies():
+    print("Checking for dependencies...")
+
     run_command('sudo apt update && sudo apt upgrade -y')
 
     for package in REQUIRED_PACKAGES:
         run_command(f'sudo apt install -y {package}')
 
 def configure_network():
+    print("Configuring network...")
+
     write_to_file('/etc/systemd/system/wlan0_ap.service', NETWORK_INTERFACE)
 
     write_to_file('/etc/hostapd/hostapd.conf', HOTSPOT_CONFIG)
@@ -115,7 +122,10 @@ def configure_network():
     run_command('sudo systemctl restart hostapd')
 
 def search_for_esp32():
+    print("Searching for ESP32...")
+
     esp32_mac = None
+    tries = 0
 
     while not esp32_mac:
         out, _ = run_command('sudo arp | grep "esp32"')
@@ -135,6 +145,12 @@ def search_for_esp32():
 
         if not esp32_mac:
             print('No ESP32 device found! Trying again in 3 seconds...')
+
+            # Troubleshooting
+            tries += 1
+            if tries % 3 == 0:
+                run_command('sudo systemctl restart hostapd')
+
             time.sleep(3)
 
     # Update dnsmasq configuration for static IP
