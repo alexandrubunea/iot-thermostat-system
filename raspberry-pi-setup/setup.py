@@ -39,6 +39,10 @@ HOTSPOT_CONFIG = """
     rsn_pairwise=CCMP
 """
 
+DAEMON_CONF = """
+DAEMON_CONF="/etc/hostapd/hostapd.conf"
+"""
+
 DNSMASQ_CONFIG = """
     interface=wlan0_ap
     dhcp-range=192.168.50.10,192.168.50.50,12h
@@ -88,16 +92,24 @@ def configure_network():
     write_to_file('/etc/systemd/system/wlan0_ap.service', NETWORK_INTERFACE)
 
     write_to_file('/etc/hostapd/hostapd.conf', HOTSPOT_CONFIG)
-    write_to_file('/etc/default/hostapd.conf', HOTSPOT_CONFIG)
 
-    write_to_file('/etc/dnsmasq.conf', DNSMASQ_CONFIG)
+    write_to_file('/etc/default/hostapd', DAEMON_CONF)
 
-    write_to_file('/etc/dhcp/dhcp.conf', DHCPCD_CONFIG)
+    write_to_file('/etc/dnsmasq.d/raspi_hotspot.conf', DNSMASQ_CONFIG)
+
+    write_to_file('/etc/dhcpcd.conf', DHCPCD_CONFIG)
 
     run_command('sudo systemctl enable wlan0_ap.service')
     run_command('sudo systemctl unmask hostapd')
     run_command('sudo systemctl enable hostapd')
     run_command('sudo systemctl enable dnsmasq')
+
+    # Restart services in order
+    run_command('sudo systemctl restart wlan0_ap')
+    run_command('sudo systemctl restart dhcpcd')
+    run_command('sudo systemctl restart dnsmasq')
+    run_command('sudo systemctl restart hostapd')
+
 
 
 def search_for_esp32():
