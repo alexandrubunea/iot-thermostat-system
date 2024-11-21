@@ -104,12 +104,6 @@ def configure_network():
     run_command('sudo systemctl enable hostapd')
     run_command('sudo systemctl enable dnsmasq')
 
-    # Restart services in order
-    run_command('sudo systemctl restart wlan0_ap')
-    run_command('sudo systemctl restart dhcpcd')
-    run_command('sudo systemctl restart dnsmasq')
-    run_command('sudo systemctl restart hostapd')
-
 
 def search_for_esp32():
     pass
