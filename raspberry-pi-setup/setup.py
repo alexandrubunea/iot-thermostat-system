@@ -22,7 +22,7 @@ from datetime import datetime
 REQUIRED_PACKAGES = [
     'hostapd',
     'dnsmasq',
-    'wireless-tools',
+    'wireless-tools'
 ]
 
 HOTSPOT_CONFIG = """
@@ -51,7 +51,6 @@ DHCPCD_CONFIG = """
 interface wlan0_ap
 static ip_address=192.168.50.1/24
 nohook wpa_supplicant
-nohook eth0
 nohook wlan0_ap
 """
 
@@ -111,7 +110,7 @@ def configure_network():
 
     write_to_file('/etc/dnsmasq.d/raspi_hotspot.conf', DNSMASQ_CONFIG)
 
-    write_to_file('/etc/dhcp/dhcp.conf', DHCPCD_CONFIG)
+    write_to_file('/etc/dhcpcd.conf', DHCPCD_CONFIG)
 
     run_command('sudo systemctl enable wlan0_ap.service')
     run_command('sudo systemctl unmask hostapd')
