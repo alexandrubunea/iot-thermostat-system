@@ -49,61 +49,56 @@ DHCPCD_CONFIG = """
     static ip_address=192.168.50.1/24 
 """
 
+NETWORK_INTERFACE = """
+    [Unit]
+    Description=Add wlan0_ap interface
+    After=network.target
+    
+    [Service]
+    Type=oneshot
+    ExecStart=/sbin/iw dev wlan0 interface add wlan0_ap type __ap
+    RemainAfterExit=yes
+    
+    [Install]
+    WantedBy=multi-user.target
+"""
+
 LOG_FILE = 'log.txt'
 
-def check_for_dependencies():
-    with open(LOG_FILE, 'a') as log: # Log for any errors
-        result = subprocess.run('sudo apt update && sudo apt upgrade -y',
+def run_command(command):
+    with open(LOG_FILE, 'a') as log:
+        result = subprocess.run(command,
                                 capture_output=True, text=True, shell=True)
 
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         log.write(f'[{timestamp}] {result.stdout}')
         log.write(f'[{timestamp}] {result.stderr}')
 
-        for package in REQUIRED_PACKAGES:
-            result = subprocess.run(f'sudo apt install -y {package}',
-                                    capture_output=True, text=True, shell=True)
+def write_to_file(file, content):
+    with open(file, 'w') as f:
+        f.write(content)
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            log.write(f'[{timestamp}] {result.stdout}')
-            log.write(f'[{timestamp}] {result.stderr}')
+def check_for_dependencies():
+    run_command('sudo apt update && sudo apt upgrade -y')
+
+    for package in REQUIRED_PACKAGES:
+        run_command(f'sudo apt install -y {package}')
 
 def configure_network():
-    with open('/etc/hostapd/hostapd.conf', 'w') as hostapd_conf:
-        hostapd_conf.write(HOTSPOT_CONFIG)
-    with open('/etc/default/hostapd.conf', 'w') as hostapd_conf:
-        hostapd_conf.write('/etc/hostapd/hostapd.conf')
+    write_to_file('/etc/systemd/system/wlan0_ap.service', NETWORK_INTERFACE)
 
-    with open('/etc/dnsmasq.conf', 'w') as dnsmasq_conf:
-        dnsmasq_conf.write(DNSMASQ_CONFIG)
+    write_to_file('/etc/hostapd/hostapd.conf', HOTSPOT_CONFIG)
+    write_to_file('/etc/default/hostapd.conf', HOTSPOT_CONFIG)
 
-    with open('/etc/dhcp/dhcp.conf', 'w') as dhcp_conf:
-        dhcp_conf.write(DHCPCD_CONFIG)
+    write_to_file('/etc/dnsmasq.conf', DNSMASQ_CONFIG)
 
-    with open(LOG_FILE, 'a') as log:
-        result = subprocess.run('sudo iw dev wlan0 interface add wlan0_ap type __ap',
-                                capture_output=True, text=True, shell=True)
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log.write(f'[{timestamp}] {result.stdout}')
-        log.write(f'[{timestamp}] {result.stderr}')
+    write_to_file('/etc/dhcp/dhcp.conf', DHCPCD_CONFIG)
 
-        result = subprocess.run('sudo systemctl unmask hostapd',
-                                capture_output=True, text=True, shell=True)
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log.write(f'[{timestamp}] {result.stdout}')
-        log.write(f'[{timestamp}] {result.stderr}')
+    run_command('sudo systemctl enable wlan0_ap.service')
+    run_command('sudo systemctl unmask hostapd')
+    run_command('sudo systemctl enable hostapd')
+    run_command('sudo systemctl enable dnsmasq')
 
-        result = subprocess.run('sudo systemctl enable hostapd',
-                                capture_output=True, text=True, shell=True)
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log.write(f'[{timestamp}] {result.stdout}')
-        log.write(f'[{timestamp}] {result.stderr}')
-
-        result = subprocess.run('sudo systemctl start dnsmasq',
-                                capture_output=True, text=True, shell=True)
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log.write(f'[{timestamp}] {result.stdout}')
-        log.write(f'[{timestamp}] {result.stderr}')
 
 def search_for_esp32():
     pass
