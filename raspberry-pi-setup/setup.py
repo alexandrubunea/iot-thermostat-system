@@ -152,7 +152,7 @@ def search_for_esp32():
     tries = 0
 
     while not esp32_mac:
-        out, _ = run_command('sudo arp | grep "esp32"')
+        out, _ = run_command('sudo arp | grep "wlan0_ap"')
 
         lines = out.splitlines()
         for line in lines:
