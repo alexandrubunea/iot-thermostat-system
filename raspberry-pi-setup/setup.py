@@ -15,7 +15,7 @@
     Usage: sudo python setup.py
 """
 
-import os, subprocess, re
+import subprocess, re
 import time
 from datetime import datetime
 
@@ -23,7 +23,6 @@ REQUIRED_PACKAGES = [
     'hostapd',
     'dnsmasq',
     'wireless-tools',
-    'arp-scan',
     'git'
 ]
 
@@ -70,6 +69,8 @@ WantedBy=multi-user.target hostapd.service
 
 LOG_FILE = 'log.txt'
 
+ESP32_IP_ADDRESS = '192.168.50.100'
+
 def run_command(command):
     with open(LOG_FILE, 'a') as log:
         result = subprocess.run(command,
@@ -114,14 +115,10 @@ def configure_network():
     run_command('sudo systemctl restart hostapd')
 
 def search_for_esp32():
-    # Keep in mind that only the ESP32 should be connected to the Raspberry Pi.
-    # This function will grab the first device that is connected to the Raspberry Pi and
-    # give to it a permanent IP address that will be used later by the web application.
-
     esp32_mac = None
 
     while not esp32_mac:
-        out, _ = run_command('sudo arp-scan --interface=wlan0_ap --localnet')
+        out, _ = run_command('sudo arp | grep "esp32"')
 
         lines = out.splitlines()
         for line in lines:
@@ -134,23 +131,22 @@ def search_for_esp32():
             mac = match.group(1).upper()
             esp32_mac = mac
 
+            break
+
         if not esp32_mac:
-            print("No ESP32 device found! Trying again in 3 seconds...")
+            print('No ESP32 device found! Trying again in 3 seconds...')
             time.sleep(3)
 
-    esp32_ip = "192.168.50.100"
-
     # Update dnsmasq configuration for static IP
-    dnsmasq_entry = f"dhcp-host={esp32_mac},{esp32_ip}\n"
+    dnsmasq_entry = f'dhcp-host={esp32_mac},{ESP32_IP_ADDRESS}\n'
     write_to_file('/etc/dnsmasq.d/esp32_static.conf', dnsmasq_entry)
 
     # Restart dnsmasq to apply changes
-    run_command("sudo systemctl restart dnsmasq")
+    run_command('sudo systemctl restart dnsmasq')
 
-    print(f"ESP32 device with MAC {esp32_mac} assigned to IP {esp32_ip}")
+    print(f'ESP32 device with MAC {esp32_mac} assigned to IP {ESP32_IP_ADDRESS}')
 
 if __name__ == '__main__':
     check_for_dependencies()
     configure_network()
-
-    os.system('sudo reboot')
+    search_for_esp32()
