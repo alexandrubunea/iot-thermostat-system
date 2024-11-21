@@ -63,7 +63,7 @@ WantedBy=multi-user.target hostapd.service
 
 LOG_FILE = 'log.txt'
 
-ESP32_IP_ADDRESS = '192.168.50.41'
+ESP32_IP_ADDRESS = '192.168.50.100'
 
 def run_command(command):
     with open(LOG_FILE, 'a') as log:
