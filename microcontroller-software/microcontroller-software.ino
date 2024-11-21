@@ -21,8 +21,8 @@
 #define RGB_LED_BLUE          25
 
 // ==== Network Configuration ====
-#define WIFI_SSID	            "YOUR_SSID"
-#define WIFI_PASSWORD         "password"
+#define WIFI_SSID             "Pi-Hotspot"
+#define WIFI_PASSWORD         "admin2raspi"
 
 // ==== Display Configuration ====
 #define SCREEN_WIDTH          128
