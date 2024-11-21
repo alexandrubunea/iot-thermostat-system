@@ -23,7 +23,6 @@ REQUIRED_PACKAGES = [
     'hostapd',
     'dnsmasq',
     'wireless-tools',
-    'git'
 ]
 
 HOTSPOT_CONFIG = """
@@ -80,8 +79,12 @@ def run_command(command):
                                 capture_output=True, text=True, shell=True)
 
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log.write(f'[{timestamp}] {result.stdout}\n')
-        log.write(f'[{timestamp}] {result.stderr}\n')
+
+        if result.stdout:
+            log.write(f'[{timestamp}] {result.stdout}\n')
+
+        if result.stderr:
+            log.write(f'[{timestamp}] {result.stderr}\n')
 
         return result.stdout, result.stderr
 
@@ -108,7 +111,7 @@ def configure_network():
 
     write_to_file('/etc/dnsmasq.d/raspi_hotspot.conf', DNSMASQ_CONFIG)
 
-    write_to_file('/etc/dhcpcd.conf', DHCPCD_CONFIG)
+    write_to_file('/etc/dhcp/dhcp.conf', DHCPCD_CONFIG)
 
     run_command('sudo systemctl enable wlan0_ap.service')
     run_command('sudo systemctl unmask hostapd')
@@ -166,3 +169,5 @@ if __name__ == '__main__':
     check_for_dependencies()
     configure_network()
     search_for_esp32()
+
+    print("Setup complete! Please restart the Raspberry Pi & ESP32.")
