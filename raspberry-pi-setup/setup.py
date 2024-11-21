@@ -8,6 +8,11 @@
     This script is tested only with the Raspberry Pi OS. I don't know how compatible is with any
     other Debian distribution.
 
+    WARNING: When executing the setup.py ensure that the ESP32 is the only device connected to the
+    Raspberry Pi so that the script can grab the MAC address and bind it to an IP static address.
+    This action must be done only once, and given this script the ESP32 should be the only device
+    connected to the Raspberry Pi.
+
     Usage: sudo python setup.py
 """
 
@@ -108,6 +113,26 @@ def configure_network():
     write_to_file('/etc/dnsmasq.d/raspi_hotspot.conf', DNSMASQ_CONFIG)
 
     write_to_file('/etc/dhcpcd.conf', DHCPCD_CONFIG)
+
+    # Modify hostapd.service
+    hostapd_service = '/lib/systemd/system/hostapd.service'
+
+    with open(hostapd_service, "r") as file:
+        lines = file.readlines()
+
+        modified_lines = []
+        after_added = False
+        for line in lines:
+            modified_lines.append(line)
+            if line.strip() == '[Unit]':
+                after_added = True
+                modified_lines.append('After=network.target\n')
+
+        if not after_added:
+            print('Failed to locate [Unit] section in hostapd.service file.')
+
+    with open(hostapd_service, "w") as file:
+        file.writelines(modified_lines)
 
     run_command('sudo systemctl enable wlan0_ap.service')
     run_command('sudo systemctl unmask hostapd')
