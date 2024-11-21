@@ -27,16 +27,16 @@ REQUIRED_PACKAGES = [
 ]
 
 HOTSPOT_CONFIG = """
-    interface=wlan0_ap
-    driver=nl80211
-    ssid=Pi-Hotspot
-    hw_mode=g
-    channel=6
-    auth_algs=1
-    wpa=2
-    wpa_passphrase=admin2raspi
-    wpa_key_mgmt=WPA-PSK
-    rsn_pairwise=CCMP
+interface=wlan0_ap
+driver=nl80211
+ssid=Pi-Hotspot
+hw_mode=g
+channel=6
+auth_algs=1
+wpa=2
+wpa_passphrase=admin2raspi
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
 """
 
 DAEMON_CONF = """
@@ -44,27 +44,27 @@ DAEMON_CONF="/etc/hostapd/hostapd.conf"
 """
 
 DNSMASQ_CONFIG = """
-    interface=wlan0_ap
-    dhcp-range=192.168.50.10,192.168.50.50,12h
+interface=wlan0_ap
+dhcp-range=192.168.50.10,192.168.50.50,12h
 """
 
 DHCPCD_CONFIG = """
-    interface wlan0_ap
-    static ip_address=192.168.50.1/24 
+interface wlan0_ap
+static ip_address=192.168.50.1/24 
 """
 
 NETWORK_INTERFACE = """
-    [Unit]
-    Description=Add wlan0_ap interface
-    After=network.target
+[Unit]
+Description=Add wlan0_ap interface
+After=network.target
     
-    [Service]
-    Type=oneshot
-    ExecStart=/sbin/iw dev wlan0 interface add wlan0_ap type __ap
-    RemainAfterExit=yes
+[Service]
+Type=oneshot
+ExecStart=/sbin/iw dev wlan0 interface add wlan0_ap type __ap
+RemainAfterExit=yes
     
-    [Install]
-    WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target hostapd.service
 """
 
 LOG_FILE = 'log.txt'
@@ -75,8 +75,8 @@ def run_command(command):
                                 capture_output=True, text=True, shell=True)
 
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log.write(f'[{timestamp}] {result.stdout}')
-        log.write(f'[{timestamp}] {result.stderr}')
+        log.write(f'[{timestamp}] {result.stdout}\n')
+        log.write(f'[{timestamp}] {result.stderr}\n')
 
 def write_to_file(file, content):
     with open(file, 'w') as f:
@@ -109,7 +109,6 @@ def configure_network():
     run_command('sudo systemctl restart dhcpcd')
     run_command('sudo systemctl restart dnsmasq')
     run_command('sudo systemctl restart hostapd')
-
 
 
 def search_for_esp32():
