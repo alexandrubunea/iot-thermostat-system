@@ -11,7 +11,7 @@
     Usage: sudo python setup.py
 """
 
-import subprocess, re, time
+import subprocess
 from datetime import datetime
 
 REQUIRED_PACKAGES = [
@@ -45,6 +45,8 @@ dhcp-range=192.168.50.10,192.168.50.50,12h
 DHCPCD_CONFIG = """
 interface wlan0_ap
 static ip_address=192.168.50.1/24
+nohook wpa_supplicant
+nohook wlan0_ap
 """
 
 NETWORK_INTERFACE = """
@@ -55,6 +57,8 @@ After=network.target
 [Service]
 Type=oneshot
 ExecStart=/sbin/iw dev wlan0 interface add wlan0_ap type __ap
+ExecStartPost=/usr/bin/ip link set dev wlan0_ap address 02:22:33:44:55:66
+ExecStartPost=/sbin/ifconfig wlan0_ap up
 RemainAfterExit=yes
     
 [Install]
@@ -62,8 +66,6 @@ WantedBy=multi-user.target hostapd.service
 """
 
 LOG_FILE = 'log.txt'
-
-ESP32_IP_ADDRESS = '192.168.50.100'
 
 def run_command(command):
     with open(LOG_FILE, 'a') as log:
@@ -116,50 +118,8 @@ def configure_network():
     run_command('sudo systemctl restart dnsmasq')
     run_command('sudo systemctl restart hostapd')
 
-def search_for_esp32():
-    print("Searching for ESP32...")
-
-    esp32_mac = None
-    tries = 0
-
-    while not esp32_mac:
-        out, _ = run_command('sudo arp | grep "esp32"')
-
-        lines = out.splitlines()
-        for line in lines:
-            # Match lines containing MAC addresses
-            match = re.search(r'([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})', line,
-                              re.IGNORECASE)
-            if not match:
-                continue
-
-            mac = match.group(1).upper()
-            esp32_mac = mac
-
-            break
-
-        if not esp32_mac:
-            print('No ESP32 device found! Trying again in 3 seconds...')
-
-            # Troubleshooting
-            tries += 1
-            if tries % 3 == 0:
-                run_command('sudo systemctl restart hostapd')
-
-            time.sleep(3)
-
-    # Update dnsmasq configuration for static IP
-    dnsmasq_entry = f'dhcp-host={esp32_mac},{ESP32_IP_ADDRESS}\n'
-    write_to_file('/etc/dnsmasq.d/esp32_static.conf', dnsmasq_entry)
-
-    # Restart dnsmasq to apply changes
-    run_command('sudo systemctl restart dnsmasq')
-
-    print(f'ESP32 device with MAC {esp32_mac} assigned to IP {ESP32_IP_ADDRESS}')
-
 if __name__ == '__main__':
     check_for_dependencies()
     configure_network()
-    search_for_esp32()
 
-    print("Setup complete! Please restart the Raspberry Pi & ESP32.")
+    print("SETUP COMPLETE")
