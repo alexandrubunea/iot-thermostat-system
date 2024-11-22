@@ -1,76 +1,49 @@
-import time
-import requests
 from flask import Flask, render_template, jsonify, request
-import threading
-from threading import Lock
+from services.ESP32 import ESP32
+import signal
+import sys
 
-ESP32_IP_ADDRESS = 'http://192.168.1.140/api/'
+app = Flask(__name__, template_folder='templates', static_folder='static')
 
-app = Flask(
-    __name__,
-    template_folder='templates',
-    static_folder='static'
-)
-
-current_data = {
-    'currentTemperature': None,
-    'currentHumidity': None,
-    'targetTemperature': None,
-    'runningTime': None
-}
-
-data_lock = Lock()
-
-def fetch_esp32_data():
-    global current_data
-    try:
-        response = requests.get(f'{ESP32_IP_ADDRESS}fetch_data', headers={'Content-Type': 'application/json'})
-        response.raise_for_status()  # Raise an exception for 4xx/5xx responses
-        data = response.json()
-
-        with data_lock:
-            current_data.update({
-                'temperature': data['currentTemperature'],
-                'humidity': data['currentHumidity'],
-                'target_temperature': data['targetTemperature'],
-                'running_time': data['runningTime']
-            })
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data from ESP32: {e}")
-    except ValueError as e:
-        print(f"Error parsing response JSON: {e}")
+# Instantiate the ESP32 class
+esp32_device = ESP32(esp32_api='http://192.168.50.100', update_interval=0.25)
 
 @app.route('/')
 def display_temperature():
-    with data_lock:
-        data = current_data
-    return render_template('index.html', **data)
+    return render_template('index.html')
 
 @app.route('/data')
 def get_data():
-    with data_lock:
-        data = current_data
-    return jsonify(data)
+    return jsonify({
+        'currentTemperature': esp32_device.get_current_temperature(),
+        'currentHumidity': esp32_device.get_current_humidity(),
+        'targetTemperature': esp32_device.get_current_target_temperature(),
+        'runningTime': esp32_device.get_current_running_time()
+    })
 
 @app.route('/button-press', methods=['POST'])
 def handle_button_press():
     data = request.get_json()
     action = data.get('action')
-    try:
-        response = requests.post(f'{ESP32_IP_ADDRESS}{action}')
-        response.raise_for_status()  # Check for errors
-        return response.text
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Error sending action to ESP32: {e}"}), 500
 
-def esp32_thread():
-    while True:
-        fetch_esp32_data()
-        time.sleep(0.25)  # Fetch every 250ms
+    match action:
+        case 'increase-target-temp':
+            esp32_device.increase_target_temperature()
+        case 'decrease-target-temp':
+            esp32_device.decrease_target_temperature()
+        case 'increase-running-time':
+            esp32_device.increase_running_time()
+        case 'decrease-running-time':
+            esp32_device.decrease_running_time()
+
+    return jsonify({'status': 'success'})
+
+
+def signal_handler(sig, frame):
+    esp32_device.kill()
+    sys.exit(0)
 
 if __name__ == '__main__':
-    # Start a background thread to fetch ESP32 data periodically
-    threading.Thread(target=esp32_thread).start()
-
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     app.run(debug=True)
